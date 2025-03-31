@@ -22,9 +22,12 @@ sub_categories = st.multiselect("Select Sub-Categories", options=df[df['Category
 if sub_categories:
     filtered_df = df[df['Sub_Category'].isin(sub_categories)]
     
+    # Ensure Order_Date is in datetime format
+    filtered_df["Order_Date"] = pd.to_datetime(filtered_df["Order_Date"])
+    
     # Sales Line Chart
-    sales_trend = filtered_df.groupby('Date')[['Sales']].sum().reset_index()
-    st.line_chart(sales_trend.set_index('Date'))
+    sales_trend = filtered_df.groupby('Order_Date')[['Sales']].sum().reset_index()
+    st.line_chart(sales_trend.set_index('Order_Date'))
     
     # Metrics Calculation
     total_sales = filtered_df['Sales'].sum()
