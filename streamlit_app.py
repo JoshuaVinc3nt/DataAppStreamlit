@@ -7,9 +7,15 @@ import math
 st.title("Data App Assignment, on March 17th")
 
 # Load data (replace with actual data source)
-df = pd.read_csv("Superstore_Sales_utf8.csv", parse_dates=True)
-st.dataframe(df)
+df = pd.read_csv("Superstore_Sales_utf8.csv")
 
+# Verify column names
+st.write("Columns in dataset:", df.columns.tolist())
+
+# Ensure Order_Date is in datetime format
+df["Order_Date"] = pd.to_datetime(df["Order_Date"], errors='coerce')
+
+# Function to calculate profit margin
 def calculate_profit_margin(sales, profit):
     return (profit / sales) * 100 if sales != 0 else 0
 
@@ -20,10 +26,11 @@ category = st.selectbox("Select Category", options=df['Category'].unique())
 sub_categories = st.multiselect("Select Sub-Categories", options=df[df['Category'] == category]['Sub_Category'].unique())
 
 if sub_categories:
-    filtered_df = df[df['Sub_Category'].isin(sub_categories)]
+    filtered_df = df[df['Sub_Category'].isin(sub_categories)].copy()
     
-    # Ensure Order_Date is in datetime format
-    filtered_df["Order_Date"] = pd.to_datetime(filtered_df["Order_Date"])
+    if filtered_df.empty:
+        st.warning("No data available for selected filters.")
+        st.stop()
     
     # Sales Line Chart
     sales_trend = filtered_df.groupby('Order_Date')[['Sales']].sum().reset_index()
@@ -46,24 +53,16 @@ if sub_categories:
 st.write("### Input Data and Examples")
 st.dataframe(df)
 
-# This bar chart will not have solid bars--but lines--because the detail data is being graphed independently
-st.bar_chart(df, x="Category", y="Sales")
-
-# Now let's do the same graph where we do the aggregation first in Pandas... (this results in a chart with solid bars)
-st.dataframe(df.groupby("Category").sum())
-# Using as_index=False here preserves the Category as a column.  If we exclude that, Category would become the dataframe index and we would need to use x=None to tell bar_chart to use the index
+# Bar Chart Aggregation
 st.bar_chart(df.groupby("Category", as_index=False).sum(), x="Category", y="Sales", color="#04f")
 
 # Aggregating by time
-# Here we ensure Order_Date is in datetime format, then set is as an index to our dataframe
-df["Order_Date"] = pd.to_datetime(df["Order_Date"])
 df.set_index('Order_Date', inplace=True)
-# Here the Grouper is using our newly set index to group by Month ('M')
 sales_by_month = df.filter(items=['Sales']).groupby(pd.Grouper(freq='M')).sum()
 
 st.dataframe(sales_by_month)
 
-# Here the grouped months are the index and automatically used for the x axis
+# Plot Sales by Month
 st.line_chart(sales_by_month, y="Sales")
 
 st.write("## Your additions")
